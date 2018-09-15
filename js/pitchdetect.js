@@ -43,7 +43,21 @@ window.onload = function() {
 	audioContext = new AudioContext();
 	MAX_SIZE = Math.max(4,Math.floor(audioContext.sampleRate/5000));	// corresponds to a 5kHz signal
 	var request = new XMLHttpRequest();
-	request.open("GET", "../sounds/whistling3.ogg", true);
+	request.open("GET", "ttls.mp3", true);
+
+	request.onreadystatechange = function(){
+		if(request.readyState == 4){
+			console.log("changed!");
+			if(request.status == 200){
+				console.log("found it!");
+			}
+			if(request.status == 404){
+				console.log("couldn't find file");
+			}
+		}
+
+	}
+
 	request.responseType = "arraybuffer";
 	request.onload = function() {
 	  audioContext.decodeAudioData( request.response, function(buffer) { 
@@ -169,8 +183,9 @@ function toggleLiveInput() {
             },
         }, gotStream);
 }
-
+var gcounter = 0;
 function togglePlayback() {
+	console.log(notesData);
     if (isPlaying) {
         //stop playing and return
         sourceNode.stop( 0 );
@@ -180,9 +195,9 @@ function togglePlayback() {
 		if (!window.cancelAnimationFrame)
 			window.cancelAnimationFrame = window.webkitCancelAnimationFrame;
         window.cancelAnimationFrame( rafID );
+        document.write(notesData);
         return "start";
     }
-
     sourceNode = audioContext.createBufferSource();
     sourceNode.buffer = theBuffer;
     sourceNode.loop = true;
@@ -313,12 +328,13 @@ function autoCorrelate( buf, sampleRate ) {
 //	var best_frequency = sampleRate/best_offset;
 }
 
+var notesData = [];
+
 function updatePitch( time ) {
 	var cycles = new Array;
 	analyser.getFloatTimeDomainData( buf );
 	var ac = autoCorrelate( buf, audioContext.sampleRate );
 	// TODO: Paint confidence meter on canvasElem here.
-
 	if (DEBUGCANVAS) {  // This draws the current waveform, useful for debugging
 		waveCanvas.clearRect(0,0,512,256);
 		waveCanvas.strokeStyle = "red";
@@ -366,6 +382,7 @@ function updatePitch( time ) {
 				detuneElem.className = "sharp";
 			detuneAmount.innerHTML = Math.abs( detune );
 		}
+		notesData.push(noteElem.innerHTML);
 	}
 
 	if (!window.requestAnimationFrame)
